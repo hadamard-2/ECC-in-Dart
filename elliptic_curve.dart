@@ -15,6 +15,11 @@ class Point {
 
     return x == other.x && y == other.y;
   }
+
+  @override
+  String toString() {
+    return "($x, $y)";
+  }
 }
 
 class EllipticCurve {
@@ -95,6 +100,25 @@ class EllipticCurve {
     }
 
     return result;
+  }
+
+  @override
+  String toString() {
+    String ellipticCurveStr = "y^2 = x^3";
+
+    ellipticCurveStr += a > 0
+        ? " + ${a}x"
+        : a < 0
+            ? " - ${a.abs()}x"
+            : "";
+    ellipticCurveStr += b > 0
+        ? " + ${b}"
+        : b < 0
+            ? " - ${b.abs()}"
+            : "";
+    ellipticCurveStr += "  mod ${p}";
+
+    return ellipticCurveStr;
   }
 }
 
