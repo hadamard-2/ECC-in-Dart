@@ -7,17 +7,15 @@ void main(List<String> args) {
 
   // Alice
   var alicePrivateKey = 121;
-  var alicePublicKey = ec.scalarMultiplication(alicePrivateKey, generator);
+  var alicePublicKey = ec.scalarMultiply(alicePrivateKey, generator);
 
   // Bob
   var bobPrivateKey = 203;
-  var bobPublicKey = ec.scalarMultiplication(bobPrivateKey, generator);
+  var bobPublicKey = ec.scalarMultiply(bobPrivateKey, generator);
 
   // Shared Secret Key
-  var sharedSecretKeyAlice =
-      ec.scalarMultiplication(alicePrivateKey, bobPublicKey);
-  var sharedSecretKeyBob =
-      ec.scalarMultiplication(bobPrivateKey, alicePublicKey);
+  var sharedSecretKeyAlice = ec.scalarMultiply(alicePrivateKey, bobPublicKey);
+  var sharedSecretKeyBob = ec.scalarMultiply(bobPrivateKey, alicePublicKey);
 
   print("Shared Secret Key with Alice: $sharedSecretKeyAlice");
   print("Shared Secret Key with Bob: $sharedSecretKeyBob");

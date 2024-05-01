@@ -71,13 +71,13 @@ void main() {
       "ellipticCurve.scalarMultiplication test",
       () => {
             test("test 1", () {
-              expect(ec.scalarMultiplication(7, Point(3, 12)), Point(15, 15));
+              expect(ec.scalarMultiply(7, Point(3, 12)), Point(15, 15));
             }),
             test("test 2", () {
-              expect(ec.scalarMultiplication(9, Point(4, 7)), Point(2, 6));
+              expect(ec.scalarMultiply(9, Point(4, 7)), Point(2, 6));
             }),
             test("test 3", () {
-              expect(ec.scalarMultiplication(3, Point(16, 10)), Point(11, 16));
+              expect(ec.scalarMultiply(3, Point(16, 10)), Point(11, 16));
             }),
           });
 }

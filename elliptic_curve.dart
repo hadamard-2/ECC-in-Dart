@@ -8,7 +8,6 @@ class Point {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
     if (other is! Point)
       throw ArgumentError(
           "Unsupported operand type for ==: ${other.runtimeType}");
@@ -68,7 +67,7 @@ class EllipticCurve {
     return (slope * (point1.x - x3) - point1.y) % p;
   }
 
-  Point add(Point point1, point2) {
+  Point add(Point point1, Point point2) {
     if (point1 == point2) {
       return double(point1);
     }
@@ -80,6 +79,10 @@ class EllipticCurve {
     return Point(x3, y3);
   }
 
+  Point subtract(Point point1, Point point2) {
+    return add(point1, Point(point2.x, -point2.y));
+  }
+
   Point double(Point point) {
     int slope = computeTangentSlope(point);
     int x3 = computeX3(slope, point.x, point.x);
@@ -88,7 +91,7 @@ class EllipticCurve {
     return Point(x3, y3);
   }
 
-  Point scalarMultiplication(int num, Point point) {
+  Point scalarMultiply(int num, Point point) {
     String numInBinary = decimalToBinary(num);
     Point result = point;
 
@@ -166,4 +169,7 @@ int computeModularInverse(int base, int modulus) {
 
 void main(List<String> args) {
   print("Implementing ECC in Dart!!");
+  var ec = EllipticCurve(0, -4, 257);
+  print(ec.add(Point(246, 174), Point(68, -84)));
+  print(ec.subtract(Point(246, 174), Point(68, 84)));
 }
