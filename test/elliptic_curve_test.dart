@@ -32,7 +32,7 @@ void main() {
     });
   });
 
-  // Elliptic Curve operations tests
+  // Elliptic Curve Operations tests
   var ec = EllipticCurve(4, 3, 17);
 
   // tests for add
@@ -67,17 +67,45 @@ void main() {
   });
 
   // tests for scalarMultiplication
-  group(
-      "ellipticCurve.scalarMultiplication test",
-      () => {
-            test("test 1", () {
-              expect(ec.scalarMultiply(7, Point(3, 12)), Point(15, 15));
-            }),
-            test("test 2", () {
-              expect(ec.scalarMultiply(9, Point(4, 7)), Point(2, 6));
-            }),
-            test("test 3", () {
-              expect(ec.scalarMultiply(3, Point(16, 10)), Point(11, 16));
-            }),
-          });
+  group("ellipticCurve.scalarMultiplication test", () {
+    test("test 1", () {
+      expect(ec.scalarMultiply(7, Point(3, 12)), Point(15, 15));
+    });
+    test("test 2", () {
+      expect(ec.scalarMultiply(9, Point(4, 7)), Point(2, 6));
+    });
+    test("test 3", () {
+      expect(ec.scalarMultiply(3, Point(16, 10)), Point(11, 16));
+    });
+  });
+
+  // tests for point at infinity
+  group("Operations on Point at Infinity", () {
+    test("equality 1", () => expect(Point(4, 7) == Point.atInfinity(), false));
+    test("equality 2", () => expect(Point.atInfinity() == Point(4, 7), false));
+    test("equality 3",
+        () => expect(Point.atInfinity() == Point.atInfinity(), true));
+    test("addition 1",
+        () => expect(ec.add(Point(3, 5), Point.atInfinity()), Point(3, 5)));
+    test("addition 2",
+        () => expect(ec.add(Point.atInfinity(), Point(3, 5)), Point(3, 5)));
+    test(
+        "subtraction 1",
+        () => expect(
+            ec.subtract(Point(13, 12), Point.atInfinity()), Point(13, 12)));
+    test(
+        "subtraction 2",
+        () => expect(
+            ec.subtract(Point.atInfinity(), Point(13, 12)), Point(13, 5)));
+    test("doubling",
+        () => expect(ec.double(Point.atInfinity()), Point.atInfinity()));
+    test(
+        "scalar multiplication 1",
+        () => expect(
+            ec.scalarMultiply(7, Point.atInfinity()), Point.atInfinity()));
+    test(
+        "scalar multiplication 2",
+        () => expect(
+            ec.scalarMultiply(-6, Point.atInfinity()), Point.atInfinity()));
+  });
 }

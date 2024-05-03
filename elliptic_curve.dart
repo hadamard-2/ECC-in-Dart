@@ -1,10 +1,16 @@
 import 'dart:math' as math;
 
 class Point {
-  int x;
-  int y;
+  int? x;
+  int? y;
+  bool _isPointAtInfinity = false;
 
   Point(this.x, this.y);
+  Point.atInfinity() : _isPointAtInfinity = true;
+
+  bool get isPointAtInfinity {
+    return _isPointAtInfinity;
+  }
 
   @override
   bool operator ==(Object other) {
@@ -12,12 +18,13 @@ class Point {
       throw ArgumentError(
           "Unsupported operand type for ==: ${other.runtimeType}");
 
-    return x == other.x && y == other.y;
+    return (this.isPointAtInfinity && other.isPointAtInfinity) ||
+        x == other.x && y == other.y;
   }
 
   @override
   String toString() {
-    return "($x, $y)";
+    return _isPointAtInfinity ? "O" : "($x, $y)";
   }
 }
 
@@ -29,7 +36,7 @@ class EllipticCurve {
   int p;
 
   EllipticCurve(this.a, this.b, this.p) {
-    if (!testEllipticCurve(a, b)) {
+    if (!_testEllipticCurve(a, b)) {
       throw ArgumentError(
           '''The given values for a & b do not satisfy, the following condition: 
       (4 * a^3 + 27 * b^2) mod p != 0 mod p
@@ -37,61 +44,82 @@ class EllipticCurve {
     }
   }
 
-  bool testEllipticCurve(int a, int b) {
+  bool _testEllipticCurve(int a, int b) {
     return (4 * math.pow(a, 3) + 27 * math.pow(b, 2)) % p != 0;
   }
 
   bool testPoint(Point point) {
-    return math.pow(point.y, 2) == (math.pow(point.x, 3) + a * point.x + b);
+    return point.isPointAtInfinity ||
+        math.pow(point.y!, 2) == (math.pow(point.x!, 3) + a * point.x! + b);
   }
 
-  int computeChordSlope(Point point1, Point point2) {
-    int numerator = (point2.y - point1.y) % p;
-    int denominator = (point2.x - point1.x) % p;
+  int? _computeChordSlope(Point point1, Point point2) {
+    int numerator = (point2.y! - point1.y!) % p;
+    int denominator = (point2.x! - point1.x!) % p;
+    if (denominator == 0) return null;
 
     return numerator * computeModularInverse(denominator, p);
   }
 
-  int computeTangentSlope(Point point) {
-    int numerator = ((3 * math.pow(point.x, 2) as int) + a) % p;
-    int denominator = (2 * point.y) % p;
+  int? _computeTangentSlope(Point point) {
+    int numerator = ((3 * math.pow(point.x!, 2) as int) + a) % p;
+    int denominator = (2 * point.y!) % p;
+    if (denominator == 0) return null;
 
     return numerator * computeModularInverse(denominator, p);
   }
 
-  int computeX3(int slope, int x1, int x2) {
+  int _computeX3(int slope, int x1, int x2) {
     return ((math.pow(slope, 2) as int) - (x1 + x2)) % p;
   }
 
-  int computeY3(int slope, Point point1, int x3) {
-    return (slope * (point1.x - x3) - point1.y) % p;
+  int _computeY3(int slope, Point point1, int x3) {
+    return (slope * (point1.x! - x3) - point1.y!) % p;
   }
 
   Point add(Point point1, Point point2) {
-    if (point1 == point2) {
-      return double(point1);
-    }
+    if (point1.isPointAtInfinity && point2.isPointAtInfinity)
+      return Point.atInfinity();
+    else if (point1.isPointAtInfinity)
+      return point2;
+    else if (point2.isPointAtInfinity) return point1;
 
-    int slope = computeChordSlope(point1, point2);
-    int x3 = computeX3(slope, point1.x, point2.x);
-    int y3 = computeY3(slope, point1, x3);
+    if (point1 == point2) return double(point1);
+
+    int? slope = _computeChordSlope(point1, point2);
+    if (slope == null) return Point.atInfinity();
+
+    int x3 = _computeX3(slope, point1.x!, point2.x!);
+    int y3 = _computeY3(slope, point1, x3);
 
     return Point(x3, y3);
   }
 
   Point subtract(Point point1, Point point2) {
-    return add(point1, Point(point2.x, -point2.y));
+    if (point1.isPointAtInfinity && point2.isPointAtInfinity)
+      return Point.atInfinity();
+    else if (point1.isPointAtInfinity)
+      return Point(point2.x, -point2.y! % p);
+    else if (point2.isPointAtInfinity) return point1;
+
+    return add(point1, Point(point2.x, -point2.y! % p));
   }
 
   Point double(Point point) {
-    int slope = computeTangentSlope(point);
-    int x3 = computeX3(slope, point.x, point.x);
-    int y3 = computeY3(slope, point, x3);
+    if (point.isPointAtInfinity) return point;
+
+    int? slope = _computeTangentSlope(point);
+    if (slope == null) return Point.atInfinity();
+
+    int x3 = _computeX3(slope, point.x!, point.x!);
+    int y3 = _computeY3(slope, point, x3);
 
     return Point(x3, y3);
   }
 
   Point scalarMultiply(int num, Point point) {
+    if (point.isPointAtInfinity) return point;
+
     String numInBinary = decimalToBinary(num);
     Point result = point;
 
@@ -170,6 +198,6 @@ int computeModularInverse(int base, int modulus) {
 void main(List<String> args) {
   print("Implementing ECC in Dart!!");
   var ec = EllipticCurve(0, -4, 257);
-  print(ec.add(Point(246, 174), Point(68, -84)));
-  print(ec.subtract(Point(246, 174), Point(68, 84)));
+  // print(ec.add(Point(246, 174), Point(68, -84)));
+  // print(ec.subtract(Point(246, 174), Point(68, 84)));
 }
