@@ -53,6 +53,10 @@ class EllipticCurve {
     _pointsOnCurve = _findPointsOnCurve();
     _order = _computeOrder();
     _generatorPoint = _findGeneratorPoint();
+
+    if (_generatorPoint == null)
+      throw ArgumentError(
+          "The given elliptic curve doesn't have a generator point hence cannot be used for cryptographic purposes.");
   }
 
   Set<Point> _findPointsOnCurve() {
@@ -88,8 +92,6 @@ class EllipticCurve {
     for (Point point in _pointsOnCurve!) {
       if (_orderOfPoint(point) == _order) return point;
     }
-    // this will never happen as an elliptic curve over prime fields is a cyclic group
-    // hence by definition will have at least generator point
     return null;
   }
 
