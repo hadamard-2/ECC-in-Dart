@@ -7,13 +7,14 @@ void main(List<String> args) {
   var ec = EllipticCurve(a: 0, b: 253, p: 257);
 
   Random rand = Random.secure();
+
   // Alice
-  var alicePrivateKey = ec.order;
-  var alicePublicKey = ec.scalarMultiply(alicePrivateKey, ec.generatorPoint);
+  var alicePrivateKey = rand.nextInt(ec.order - 1) + 1;
+  var alicePublicKey = ec.scalarMultiplyGenerator(alicePrivateKey);
 
   // Bob
-  var bobPrivateKey = rand.nextInt(ec.order);
-  var bobPublicKey = ec.scalarMultiply(bobPrivateKey, ec.generatorPoint);
+  var bobPrivateKey = rand.nextInt(ec.order - 1) + 1;
+  var bobPublicKey = ec.scalarMultiplyGenerator(bobPrivateKey);
 
   // Alice Encrypting Her Message
   var plaintextAlice = ec.pointsOnCurve.toList()[rand.nextInt(ec.order)];

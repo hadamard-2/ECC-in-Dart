@@ -130,7 +130,13 @@ class EllipticCurve {
     int denominator = (point2.x! - point1.x!) % p;
     if (denominator == 0) return null;
 
-    return numerator * computeModularInverse(denominator, p)!;
+    try {
+      return numerator * denominator.modInverse(p);
+    } catch (e) {
+      print('''Cannot calculate chord slope because... 
+multiplicative modular inverse of $denominator modulus $p doesn't exist!''');
+      return null;
+    }
   }
 
   int? _computeTangentSlope(Point point) {
@@ -138,7 +144,13 @@ class EllipticCurve {
     int denominator = (2 * point.y!) % p;
     if (denominator == 0) return null;
 
-    return numerator * computeModularInverse(denominator, p)!;
+    try {
+      return numerator * denominator.modInverse(p);
+    } catch (e) {
+      print('''Cannot calculate tangent slope because... 
+multiplicative modular inverse of $denominator modulus $p doesn't exist!''');
+      return null;
+    }
   }
 
   Point add(Point point1, Point point2) {
@@ -184,7 +196,7 @@ class EllipticCurve {
   // NOTE - I wanna build a table for this so that it can store values for scalar products
   // if it can find the value in the table it'll return that
   // else, it'll compute the value and store it in the table
-  Point scalarMultiply(int num, Point point) {
+  Point scalarMultiply(dynamic num, Point point) {
     if (point.isPointAtInfinity) return point;
 
     String numInBinary = decimalToBinary(num);
@@ -198,6 +210,10 @@ class EllipticCurve {
     }
 
     return result;
+  }
+
+  Point scalarMultiplyGenerator(dynamic num) {
+    return scalarMultiply(num, generatorPoint);
   }
 
   @override
@@ -220,55 +236,21 @@ class EllipticCurve {
   }
 }
 
-// int? perfectSquareRoot(int num) {
-//   double sqrt = math.sqrt(num);
-//   int sqrtInt = sqrt.toInt();
 
-//   return sqrt - sqrtInt == 0 ? sqrtInt : null;
-// }
-
-String decimalToBinary(int num) {
+String decimalToBinary(dynamic num) {
   String binary = "";
   // because I only care about the magnitude, I'll take the absolute value
-  int decimal = num.abs();
+  var decimal = num.abs();
+  var base = num is BigInt ? BigInt.two : 2;
 
   do {
-    binary = (decimal % 2).toString() + binary;
-    decimal ~/= 2;
-  } while (decimal != 0);
+    binary = (decimal % base).toString() + binary;
+    decimal ~/= base;
+  } while (decimal != (num is BigInt ? BigInt.zero : 0));
 
   return binary;
 }
 
-// int computeGCD(int num1, num2) {
-//   var (gcd, _) = EEA(num1, num2);
-//   return gcd;
-// }
-
-int? computeModularInverse(int base, int modulus) {
-  var (gcd, modularInverse) = EEA(modulus, base);
-  if (gcd != 1) return null;
-  return modularInverse;
-}
-
-(int, int) EEA(int num1, int num2) {
-  var (a, b) = (num1, num2);
-  var (q, r) = (a ~/ b, a % b);
-  int t1 = 0, t2 = 1, t3 = -q;
-
-  while (r != 0) {
-    (a, b) = (b, r);
-    (q, r) = (a ~/ b, a % b);
-    (t1, t2) = (t2, t3);
-    t3 = t1 - q * t2;
-  }
-
-  return (b, t2 % num1);
-}
-
 void main(List<String> args) {
   print("Implementing ECC in Dart!!");
-  var ec = EllipticCurve(a: 1, b: 0, p: 13);
-  // print(ec.order);
-  print(ec._findGeneratorPoint());
 }

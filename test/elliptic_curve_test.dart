@@ -2,21 +2,6 @@ import 'package:test/test.dart';
 import '../elliptic_curve.dart';
 
 void main() {
-  // tests for computeModularInverse
-  group("computeModularInverse tests", () {
-    test("test 1", () {
-      expect(computeModularInverse(11, 26), 19);
-    });
-
-    test("test 2", () {
-      expect(computeModularInverse(3, 11), 4);
-    });
-
-    test("test 3", () {
-      expect(computeModularInverse(10, 17), 12);
-    });
-  });
-
   // tests for decimalToBinary
   group("decimalToBinary tests", () {
     test("test 1", () {

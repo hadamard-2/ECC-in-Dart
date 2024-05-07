@@ -8,12 +8,12 @@ void main(List<String> args) {
 
   Random rand = Random.secure();
   // Alice
-  var alicePrivateKey = rand.nextInt(ec.order);
-  var alicePublicKey = ec.scalarMultiply(alicePrivateKey, ec.generatorPoint);
+  var alicePrivateKey = rand.nextInt(ec.order - 1) + 1;
+  var alicePublicKey = ec.scalarMultiplyGenerator(alicePrivateKey);
 
   // Bob
-  var bobPrivateKey = rand.nextInt(ec.order);
-  var bobPublicKey = ec.scalarMultiply(bobPrivateKey, ec.generatorPoint);
+  var bobPrivateKey = rand.nextInt(ec.order - 1) + 1;
+  var bobPublicKey = ec.scalarMultiplyGenerator(bobPrivateKey);
 
   // Shared Secret Key
   var sharedSecretKeyAlice = ec.scalarMultiply(alicePrivateKey, bobPublicKey);
