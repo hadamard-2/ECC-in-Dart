@@ -33,7 +33,7 @@ void main() {
   });
 
   // Elliptic Curve Operations tests
-  var ec = EllipticCurve(4, 3, 17);
+  var ec = EllipticCurve(a: 4, b: 3, p: 17);
 
   // tests for add
   group("ellipticCurve.add tests", () {

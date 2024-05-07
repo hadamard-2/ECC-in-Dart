@@ -1,17 +1,19 @@
+import 'dart:math';
+
 import 'elliptic_curve.dart';
 
 void main(List<String> args) {
   // Public Info
-  var ec = EllipticCurve(0, -4, 211);
-  var generator = Point(2, 2);
+  var ec = EllipticCurve(a: 0, b: -4, p: 211);
 
+  Random rand = Random.secure();
   // Alice
-  var alicePrivateKey = 121;
-  var alicePublicKey = ec.scalarMultiply(alicePrivateKey, generator);
+  var alicePrivateKey = rand.nextInt(ec.order);
+  var alicePublicKey = ec.scalarMultiply(alicePrivateKey, ec.generatorPoint);
 
   // Bob
-  var bobPrivateKey = 203;
-  var bobPublicKey = ec.scalarMultiply(bobPrivateKey, generator);
+  var bobPrivateKey = rand.nextInt(ec.order);
+  var bobPublicKey = ec.scalarMultiply(bobPrivateKey, ec.generatorPoint);
 
   // Shared Secret Key
   var sharedSecretKeyAlice = ec.scalarMultiply(alicePrivateKey, bobPublicKey);

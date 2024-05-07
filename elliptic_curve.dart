@@ -23,34 +23,104 @@ class Point {
   }
 
   @override
+  int get hashCode {
+    if (_isPointAtInfinity) return 0;
+    return Object.hash(x, y);
+  }
+
+  @override
   String toString() {
     return _isPointAtInfinity ? "O" : "($x, $y)";
   }
 }
 
 class EllipticCurve {
-  int a;
-  int b;
-  // I think p has to be a prime number greater than 3
-  // (if so I have to check the primality of p in testEllipticCurve)
-  int p;
+  final int a;
+  final int b;
+  final int p;
 
-  EllipticCurve(this.a, this.b, this.p) {
-    if (!_testEllipticCurve(a, b)) {
+  Set<Point>? _pointsOnCurve;
+  Point? _generatorPoint;
+  int? _order;
+
+  EllipticCurve({required this.a, required this.b, required this.p}) {
+    if (!_testEllipticCurve(a, b))
       throw ArgumentError(
           '''The given values for a & b do not satisfy, the following condition: 
       (4 * a^3 + 27 * b^2) mod p != 0 mod p
       Please, choose different values.''');
+
+    _pointsOnCurve = _findPointsOnCurve();
+    _order = _computeOrder();
+    _generatorPoint = _findGeneratorPoint();
+  }
+
+  Set<Point> _findPointsOnCurve() {
+    Set<Point> points = {Point.atInfinity()};
+
+    // using the concept of quadratic residues
+    int lhs, rhs;
+    for (int x = 0; x < p; x++) {
+      for (int y = 0; y <= (p - 1) / 2; y++) {
+        lhs = (y * y) % p;
+        rhs = (math.pow(x, 3).toInt() + a * x + b) % p;
+        if (lhs == rhs) points.addAll([Point(x, y % p), Point(x, -y % p)]);
+      }
     }
+
+    return points;
+  }
+
+  int _orderOfPoint(Point point) {
+    if (point.isPointAtInfinity) return -1;
+
+    int orderOfPoint = 1;
+    Point nP;
+    do {
+      orderOfPoint++;
+      nP = scalarMultiply(orderOfPoint, point);
+    } while (!nP.isPointAtInfinity);
+
+    return orderOfPoint;
+  }
+
+  Point? _findGeneratorPoint() {
+    for (Point point in _pointsOnCurve!) {
+      if (_orderOfPoint(point) == _order) return point;
+    }
+    // this will never happen as an elliptic curve over prime fields is a cyclic group
+    // hence by definition will have at least generator point
+    return null;
+  }
+
+  int _computeOrder() {
+    return _pointsOnCurve!.length;
+  }
+
+  Set<Point> get pointsOnCurve {
+    return _pointsOnCurve!;
+  }
+
+  Point get generatorPoint {
+    return _generatorPoint!;
+  }
+
+  int get order {
+    return _order!;
   }
 
   bool _testEllipticCurve(int a, int b) {
+    // NOTE - check if a and b are in the finite field
+    // NOTE - check if p is prime
+    // NOTE - it should return error code for each type of error
+    // NOTE - (a: -1, b: -2, p: -3, discriminant: -4, no error: 0)
     return (4 * math.pow(a, 3) + 27 * math.pow(b, 2)) % p != 0;
   }
 
   bool testPoint(Point point) {
     return point.isPointAtInfinity ||
-        math.pow(point.y!, 2) == (math.pow(point.x!, 3) + a * point.x! + b);
+        math.pow(point.y!, 2) % p ==
+            (math.pow(point.x!, 3) + a * point.x! + b) % p;
   }
 
   int? _computeChordSlope(Point point1, Point point2) {
@@ -58,7 +128,7 @@ class EllipticCurve {
     int denominator = (point2.x! - point1.x!) % p;
     if (denominator == 0) return null;
 
-    return numerator * computeModularInverse(denominator, p);
+    return numerator * computeModularInverse(denominator, p)!;
   }
 
   int? _computeTangentSlope(Point point) {
@@ -66,15 +136,7 @@ class EllipticCurve {
     int denominator = (2 * point.y!) % p;
     if (denominator == 0) return null;
 
-    return numerator * computeModularInverse(denominator, p);
-  }
-
-  int _computeX3(int slope, int x1, int x2) {
-    return ((math.pow(slope, 2) as int) - (x1 + x2)) % p;
-  }
-
-  int _computeY3(int slope, Point point1, int x3) {
-    return (slope * (point1.x! - x3) - point1.y!) % p;
+    return numerator * computeModularInverse(denominator, p)!;
   }
 
   Point add(Point point1, Point point2) {
@@ -86,11 +148,11 @@ class EllipticCurve {
 
     if (point1 == point2) return double(point1);
 
-    int? slope = _computeChordSlope(point1, point2);
+    final slope = _computeChordSlope(point1, point2);
     if (slope == null) return Point.atInfinity();
 
-    int x3 = _computeX3(slope, point1.x!, point2.x!);
-    int y3 = _computeY3(slope, point1, x3);
+    int x3 = ((math.pow(slope, 2) as int) - (point1.x! + point2.x!)) % p;
+    int y3 = (slope * (point1.x! - x3) - point1.y!) % p;
 
     return Point(x3, y3);
   }
@@ -111,12 +173,15 @@ class EllipticCurve {
     int? slope = _computeTangentSlope(point);
     if (slope == null) return Point.atInfinity();
 
-    int x3 = _computeX3(slope, point.x!, point.x!);
-    int y3 = _computeY3(slope, point, x3);
+    int x3 = ((math.pow(slope, 2) as int) - (point.x! + point.x!)) % p;
+    int y3 = (slope * (point.x! - x3) - point.y!) % p;
 
     return Point(x3, y3);
   }
 
+  // NOTE - I wanna build a table for this so that it can store values for scalar products
+  // if it can find the value in the table it'll return that
+  // else, it'll compute the value and store it in the table
   Point scalarMultiply(int num, Point point) {
     if (point.isPointAtInfinity) return point;
 
@@ -153,6 +218,13 @@ class EllipticCurve {
   }
 }
 
+// int? perfectSquareRoot(int num) {
+//   double sqrt = math.sqrt(num);
+//   int sqrtInt = sqrt.toInt();
+
+//   return sqrt - sqrtInt == 0 ? sqrtInt : null;
+// }
+
 String decimalToBinary(int num) {
   String binary = "";
   // because I only care about the magnitude, I'll take the absolute value
@@ -171,12 +243,9 @@ String decimalToBinary(int num) {
 //   return gcd;
 // }
 
-int computeModularInverse(int base, int modulus) {
+int? computeModularInverse(int base, int modulus) {
   var (gcd, modularInverse) = EEA(modulus, base);
-  if (gcd != 1) {
-    throw ArgumentError(
-        "The modular inverse of $base mod $modulus does not exist because they are not coprime.");
-  }
+  if (gcd != 1) return null;
   return modularInverse;
 }
 
@@ -197,7 +266,7 @@ int computeModularInverse(int base, int modulus) {
 
 void main(List<String> args) {
   print("Implementing ECC in Dart!!");
-  var ec = EllipticCurve(0, -4, 257);
-  // print(ec.add(Point(246, 174), Point(68, -84)));
-  // print(ec.subtract(Point(246, 174), Point(68, 84)));
+  var ec = EllipticCurve(a: 1, b: 0, p: 13);
+  // print(ec.order);
+  print(ec._findGeneratorPoint());
 }
