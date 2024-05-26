@@ -67,7 +67,7 @@ class EllipticCurve {
     for (int x = 0; x < p; x++) {
       for (int y = 0; y <= (p - 1) / 2; y++) {
         lhs = (y * y) % p;
-        rhs = (math.pow(x, 3).toInt() + a * x + b) % p;
+        rhs = ((x * x * x) + a * x + b) % p;
         if (lhs == rhs) points.addAll([Point(x, y % p), Point(x, -y % p)]);
       }
     }
@@ -112,11 +112,14 @@ class EllipticCurve {
   }
 
   bool _testEllipticCurve(int a, int b) {
-    // NOTE - check if a and b are in the finite field
-    // NOTE - check if p is prime
-    // NOTE - it should return error code for each type of error
-    // NOTE - (a: -1, b: -2, p: -3, discriminant: -4, no error: 0)
-    return (4 * math.pow(a, 3) + 27 * math.pow(b, 2)) % p != 0;
+    // NOTE
+    // check if a and b are in the finite field
+    // check if p is prime
+    // it should return error code for each type of error
+    // (a: -1, b: -2, p: -3, discriminant: -4, no error: 0)
+    return (0 <= a && a < p) &&
+        (0 <= b && b < p) &&
+        (4 * math.pow(a, 3) + 27 * math.pow(b, 2)) % p != 0;
   }
 
   bool testPoint(Point point) {
@@ -140,7 +143,7 @@ multiplicative modular inverse of $denominator modulus $p doesn't exist!''');
   }
 
   int? _computeTangentSlope(Point point) {
-    int numerator = ((3 * math.pow(point.x!, 2) as int) + a) % p;
+    int numerator = ((3 * point.x! * point.x!) + a) % p;
     int denominator = (2 * point.y!) % p;
     if (denominator == 0) return null;
 
@@ -165,7 +168,7 @@ multiplicative modular inverse of $denominator modulus $p doesn't exist!''');
     final slope = _computeChordSlope(point1, point2);
     if (slope == null) return Point.atInfinity();
 
-    int x3 = ((math.pow(slope, 2) as int) - (point1.x! + point2.x!)) % p;
+    int x3 = (slope * slope - (point1.x! + point2.x!)) % p;
     int y3 = (slope * (point1.x! - x3) - point1.y!) % p;
 
     return Point(x3, y3);
@@ -187,7 +190,7 @@ multiplicative modular inverse of $denominator modulus $p doesn't exist!''');
     int? slope = _computeTangentSlope(point);
     if (slope == null) return Point.atInfinity();
 
-    int x3 = ((math.pow(slope, 2) as int) - (point.x! + point.x!)) % p;
+    int x3 = (slope * slope - (point.x! + point.x!)) % p;
     int y3 = (slope * (point.x! - x3) - point.y!) % p;
 
     return Point(x3, y3);
@@ -235,7 +238,6 @@ multiplicative modular inverse of $denominator modulus $p doesn't exist!''');
     return ellipticCurveStr;
   }
 }
-
 
 String decimalToBinary(dynamic num) {
   String binary = "";

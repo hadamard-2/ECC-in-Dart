@@ -4,7 +4,7 @@ import 'elliptic_curve.dart';
 
 void main(List<String> args) {
   // Public Info
-  var ec = EllipticCurve(a: 0, b: -4, p: 211);
+  var ec = EllipticCurve(a: 0, b: 3, p: 211);
 
   Random rand = Random.secure();
   // Alice
