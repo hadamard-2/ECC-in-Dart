@@ -1,2 +1,2 @@
-# ECC-in-Dart
+# Elliptic Curve Cryptography Implementation in Pure Dart
  
